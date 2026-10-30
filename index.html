@@ -135,8 +135,6 @@ input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within
         <legend>출장자</legend>
         <div class="row">
           <label class="f">성명<input type="text" id="name" placeholder="홍길동"></label>
-          <label class="f">소속<input type="text" id="org" placeholder="○○학과"></label>
-          <label class="f">직급(직위)<input type="text" id="rank" placeholder="연구원"></label>
         </div>
       </fieldset>
 
@@ -161,8 +159,8 @@ input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within
           <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)"><label for="et-h">종료 시각 (24시)</label><div class="hm"><select id="et-h" aria-label="종료 시각 시"></select><span>:</span><select id="et-m" aria-label="종료 시각 분"></select></div><input type="hidden" id="et" value="18:00"></div>
         </div>
         <div class="row">
-          <label class="f">출발지(소속기관)<input type="text" id="from" value="충남대학교"></label>
-          <label class="f">목적지(연수장소)<input type="text" id="to" placeholder="예: 서울 코엑스"></label>
+          <label class="f">출발지<input type="text" id="from" value="충남대학교"></label>
+          <label class="f">목적지<input type="text" id="to" placeholder="예: 서울 코엑스"></label>
         </div>
         <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">이동수단
           <div class="seg" role="radiogroup" aria-label="이동수단">
@@ -173,7 +171,6 @@ input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within
         <label class="f">이동수단 세부 (선택)<input type="text" id="trd" placeholder="예: 차량 12가3456 / KTX 대전→서울"></label>
         <label class="f">식사여부<input type="text" id="meal" placeholder="예: 중식 제공, 석식 미제공"></label>
         <label class="f">사업명<input type="text" id="proj" placeholder="사업명 입력"></label>
-        <label class="f">비고<input type="text" id="note"></label>
         <div class="row">
           <label class="f">신청일<input type="date" id="ad"></label>
           <label class="f">연구책임자<input type="text" id="pi" value="이창훈"></label>
@@ -251,7 +248,7 @@ input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within
 <script>
 (function(){
   const $=id=>document.getElementById(id);
-  const TEXT_IDS=['name','org','rank','purpose','sd','ed','st','et','from','to','trd','meal','proj','note','ad','pi'];
+  const TEXT_IDS=['name','purpose','sd','ed','st','et','from','to','trd','meal','proj','ad','pi'];
   const imgs={hipass:[],map:[],ticket:[],lodging:[]};
   const KEY='trip-form-v1';
   const h=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -282,18 +279,17 @@ input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within
       <p class="lead">다음과 같이 출장 신청(승인) 내역을 첨부합니다.</p>
       <p class="dot">● 신청내역</p>
       <table>
-        <tr><th rowspan="2">출 장 자</th><th class="sub">성 명</th><th class="sub">소 속</th><th class="sub" style="letter-spacing:.15em">직 급(직 위)</th></tr>
-        <tr><td class="c">${h(v('name'))}</td><td class="c">${h(v('org'))}</td><td class="c">${h(v('rank'))}</td></tr>
+        <tr><th rowspan="2">출 장 자</th><th class="sub">성 명</th></tr>
+        <tr><td class="c">${h(v('name'))}</td></tr>
       </table>
       <table>
         <tr><th>출 장 내 용</th><td colspan="2">${h(v('purpose'))}</td></tr>
         <tr><th>출 장 일 시</th><td colspan="2">${dot(v('sd'))} ~ ${dot(v('ed'))} (${h(v('st')||'00:00')} ~ ${h(v('et')||'00:00')})</td></tr>
-        <tr><th rowspan="2">출 장 지</th><td class="c sub-h">출발지(소속기관)</td><td class="c sub-h">목적지(연수장소)</td></tr>
+        <tr><th rowspan="2">출 장 지</th><td class="c sub-h">출발지</td><td class="c sub-h">목적지</td></tr>
         <tr><td class="c">${h(v('from'))}</td><td class="c">${h(v('to'))}</td></tr>
         <tr><th>이 동 수 단</th><td colspan="2">${trTxt}</td></tr>
         <tr><th>식 사 여 부</th><td colspan="2">${h(v('meal'))}</td></tr>
         <tr><th>사 업 명</th><td colspan="2">${h(v('proj'))}</td></tr>
-        <tr><th style="letter-spacing:2.6em;padding-left:calc(10px + 2.6em)">비고</th><td colspan="2">${h(v('note'))}</td></tr>
       </table>
       <p class="req">상기와 같이 신청하오니 처리하여 주시기 바랍니다.</p>
       <p class="date">${korDate(v('ad'))}</p>
@@ -516,8 +512,8 @@ input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within
     const period=sd||ed?`${sd?dot(sd):''} ~ ${ed?dot(ed):''}`:'';
     const payload={
       "출장자":v('name'),
-      "소속":v('org'),
-      "직급":v('rank'),
+      "소속":"",
+      "직급":"",
       "출장목적":v('purpose'),
       "출장기간":period,
       "출장시간":`${v('st')}~${v('et')}`,
@@ -526,7 +522,7 @@ input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within
       "교통편":tr()+(v('trd')?` (${v('trd')})`:''),
       "식사여부":v('meal'),
       "사업명":v('proj'),
-      "비고":v('note'),
+      "비고":"",
       "구분":zone(),
       "증빙":evidenceCount()
     };
