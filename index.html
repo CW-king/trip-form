@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>출장신청서 작성기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&display=swap">
+<style>
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* Layout: form column + live A4 preview; fixed save bar at the bottom */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#17202a; --muted:#5b6673; --line:#d5dce4;
+  --accent:#1f4e8c; --accent-soft:#e3ebf6; --accent-ink:#ffffff; --warn:#a4421c; --ok:#1d6b45;
+  --ui:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --paper:"Nanum Gothic","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171d; --surface:#1b222a; --ink:#e6ebf0; --muted:#9aa6b2; --line:#2e3843;
+  --accent:#7fa8e0; --accent-soft:#22324a; --accent-ink:#0e1620; --warn:#f0a07c; --ok:#7fd1a6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171d; --surface:#1b222a; --ink:#e6ebf0; --muted:#9aa6b2; --line:#2e3843;
+  --accent:#7fa8e0; --accent-soft:#22324a; --accent-ink:#0e1620; --warn:#f0a07c; --ok:#7fd1a6; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.5}
+.app{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 120px}
+header h1{font-size:22px;margin:0 0 4px;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:24px;margin-top:18px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+form{display:flex;flex-direction:column;gap:14px;min-width:0}
+fieldset{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 14px 16px;margin:0;display:flex;flex-direction:column;gap:12px;min-width:0}
+legend{font-weight:700;font-size:14px;padding:0 6px;color:var(--accent)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+.hm{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.hm select{flex:1;min-width:0}
+select,input[type=text],input[type=date],input[type=time]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 10px;width:100%;min-width:0}
+input:focus-visible,button:focus-visible,a:focus-visible,.seg label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:flex;gap:6px}
+.seg label{flex:1;text-align:center;border:1px solid var(--line);border-radius:7px;padding:9px 6px;cursor:pointer;font-weight:600;font-size:14px;background:var(--bg)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.check{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.links{display:flex;flex-direction:column;gap:6px}
+.links a{display:flex;justify-content:space-between;align-items:center;gap:8px;text-decoration:none;color:var(--accent);background:var(--accent-soft);border-radius:7px;padding:9px 12px;font-weight:600;font-size:14px}
+.links a span{font-weight:400;font-size:12px;color:var(--muted)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.drop-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+.drop-head button,.pick{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.thumbs{display:flex;flex-wrap:wrap;gap:6px}
+.paste{border-radius:6px;background:var(--bg);color:var(--muted);font-size:12.5px;padding:10px;text-align:center;cursor:text;caret-color:transparent;-webkit-user-select:text;user-select:text}
+.paste b{font-weight:500}
+.paste:focus{outline:2px solid var(--accent);outline-offset:1px;color:var(--accent)}
+.drop.active{border-color:var(--accent)}
+.thumbs:empty{display:none}
+.thumb{position:relative;width:64px;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:13px;line-height:22px;padding:0;cursor:pointer}
+.preview{position:sticky;top:12px;min-width:0}
+@media (max-width:900px){.preview{position:static}}
+.preview h2{font-size:14px;margin:0 0 8px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between}
+#pages{display:flex;flex-direction:column;gap:14px}
+.frame{box-shadow:0 1px 3px rgba(0,0,0,.18);overflow:hidden;background:#fff;max-width:100%}
+.frame>.paper{transform-origin:top left}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:20}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+#status{font-size:13px;color:var(--muted);min-width:0}
+#status.err{color:var(--warn)} #status.ok{color:var(--ok)}
+#save{font:inherit;font-weight:700;font-size:15px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:9px;padding:12px 20px;cursor:pointer;white-space:nowrap}
+#save:disabled{opacity:.55;cursor:progress}
+#stage{position:fixed;left:-12000px;top:0;width:794px}
+.xdrop{border:1.5px dashed var(--line);border-radius:8px;padding:18px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;transition:background .15s,border-color .15s}
+.xdrop strong{color:var(--ink);font-size:14.5px}
+.xdrop.over,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.xlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.xlist:empty{display:none}
+.xlist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px}
+.xlist .tag{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--accent-ink);background:var(--accent);border-radius:4px;padding:2px 6px}
+.xlist .nm{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xlist .nm small{color:var(--muted);margin-left:6px}
+.xlist .ctl{display:flex;gap:4px}
+.xlist .ctl button{font:inherit;font-size:13px;width:28px;height:28px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;cursor:pointer;padding:0}
+.xlist .ctl button:disabled{opacity:.35;cursor:default}
+.xcard{border:1px dashed var(--line);border-radius:8px;background:var(--surface);padding:14px 16px;font-size:13.5px;color:var(--muted)}
+.xcard b{color:var(--ink)}
+.xcard ol{margin:6px 0 0;padding-left:20px}
+
+/* ---- A4 paper (fixed print look, same in both themes) ---- */
+.paper{width:794px;height:1123px;background:#fff;color:#000;font-family:var(--paper);padding:78px 66px 70px;display:flex;flex-direction:column;font-size:15px;line-height:1.4}
+.paper h3{text-align:center;font-size:27px;font-weight:800;letter-spacing:.32em;margin:40px 0 46px}
+.paper .lead{margin:0 0 20px}
+.paper .dot{margin:0 0 8px}
+.paper table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:22px}
+.paper td,.paper th{border:1.6px solid #000;padding:6px 10px;height:40px;vertical-align:middle;word-break:keep-all;overflow-wrap:anywhere}
+.paper th{font-weight:800;letter-spacing:.45em;width:27%;text-align:center;padding-left:calc(10px + .45em)}
+.paper th.sub{font-weight:700;letter-spacing:.3em;width:auto;height:34px}
+.paper td.c{text-align:center}
+.paper .sub-h{text-align:center;height:30px;font-size:14px}
+.paper .req{text-align:center;margin:42px 0 52px}
+.paper .date{text-align:center;word-spacing:.3em;margin-bottom:56px}
+.paper .sign{display:flex;justify-content:flex-end;gap:34px;padding-right:10px}
+.paper .sign .lbl{letter-spacing:.42em}
+.paper .sign .nm{letter-spacing:.35em;min-width:110px;text-align:center}
+.paper .to{margin-top:auto;font-size:21px;font-weight:800;letter-spacing:.03em}
+.box{flex:1;border:1.6px solid #000;display:flex;flex-direction:column;min-height:0}
+.box-h{border-bottom:1.6px solid #000;text-align:center;padding:12px;font-size:17px;letter-spacing:.2em}
+.box-b{flex:1;min-height:0;display:flex;flex-direction:column;padding:14px;gap:12px}
+.ph{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#666;font-style:italic;text-align:center;gap:4px}
+.ph p{margin:0}
+.part{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px}
+.part-l{font-size:14px;font-weight:700}
+.imgs{flex:1;min-height:0;display:grid;gap:10px;grid-auto-rows:minmax(0,1fr)}
+.cell{min-height:0;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.cell img{display:block;width:auto;height:auto;max-width:100%;max-height:100%}
+.empty-part{flex:1;display:flex;align-items:center;justify-content:center;color:#888;font-style:italic;border:1px dashed #bbb}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>출장신청서 작성기</h1>
+    <p>국내-관외 출장신청서를 입력하고 교통비·숙박비 증빙 사진을 붙여 PDF로 저장합니다. 입력한 글자는 이 기기에 임시 저장됩니다(사진 제외).</p>
+  </header>
+
+  <div class="grid">
+    <form id="f" autocomplete="off">
+      <fieldset>
+        <legend>출장자</legend>
+        <div class="row">
+          <label class="f">성명<input type="text" id="name" placeholder="홍길동"></label>
+          <label class="f">소속<input type="text" id="org" placeholder="○○학과"></label>
+          <label class="f">직급(직위)<input type="text" id="rank" placeholder="연구원"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>출장 구분</legend>
+        <div class="seg" role="radiogroup" aria-label="출장 구분">
+          <label><input type="radio" name="zone" id="zone-out" value="관외" checked>관외</label>
+          <label><input type="radio" name="zone" id="zone-in" value="관내">관내</label>
+        </div>
+        <p class="hint" id="zone-hint">관외 출장: 자차 이용 시 하이패스 영수증과 지도 캡처가 필요합니다.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>출장 내용</legend>
+        <label class="f">출장내용<input type="text" id="purpose" placeholder="예: ○○ 교육 연수 참석"></label>
+        <div class="row">
+          <label class="f">시작일<input type="date" id="sd"></label>
+          <label class="f">종료일<input type="date" id="ed"></label>
+        </div>
+        <div class="row">
+          <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)"><label for="st-h">시작 시각 (24시)</label><div class="hm"><select id="st-h" aria-label="시작 시각 시"></select><span>:</span><select id="st-m" aria-label="시작 시각 분"></select></div><input type="hidden" id="st" value="09:00"></div>
+          <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)"><label for="et-h">종료 시각 (24시)</label><div class="hm"><select id="et-h" aria-label="종료 시각 시"></select><span>:</span><select id="et-m" aria-label="종료 시각 분"></select></div><input type="hidden" id="et" value="18:00"></div>
+        </div>
+        <div class="row">
+          <label class="f">출발지(소속기관)<input type="text" id="from" value="충남대학교"></label>
+          <label class="f">목적지(연수장소)<input type="text" id="to" placeholder="예: 서울 코엑스"></label>
+        </div>
+        <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">이동수단
+          <div class="seg" role="radiogroup" aria-label="이동수단">
+            <label><input type="radio" name="tr" id="tr-car" value="자차" checked>자차</label>
+            <label><input type="radio" name="tr" id="tr-pub" value="대중교통">대중교통</label>
+          </div>
+        </div>
+        <label class="f">이동수단 세부 (선택)<input type="text" id="trd" placeholder="예: 차량 12가3456 / KTX 대전→서울"></label>
+        <label class="f">식사여부<input type="text" id="meal" placeholder="예: 중식 제공, 석식 미제공"></label>
+        <label class="f">사업명<input type="text" id="proj" placeholder="사업명 입력"></label>
+        <label class="f">비고<input type="text" id="note"></label>
+        <div class="row">
+          <label class="f">신청일<input type="date" id="ad"></label>
+          <label class="f">연구책임자<input type="text" id="pi" value="이창훈"></label>
+        </div>
+      </fieldset>
+
+      <fieldset id="fs-car">
+        <legend>교통비 증빙 · 자차</legend>
+        <div class="links">
+          <a id="lk-hipass" href="https://www.hipass.co.kr" target="_blank" rel="noopener">하이패스 영수증 발급 <span>hipass.co.kr ↗</span></a>
+          <a id="lk-naver" href="https://map.naver.com/p/directions" target="_blank" rel="noopener">네이버 지도 길찾기 <span>map.naver.com ↗</span></a>
+          <a id="lk-kakao" href="https://map.kakao.com/" target="_blank" rel="noopener">카카오맵 길찾기 (출발·도착 자동 입력) <span>map.kakao.com ↗</span></a>
+        </div>
+        <p class="hint">지도에서 출발지 → 목적지 자동차 경로를 띄우고, 편도 거리가 보이게 화면을 캡처해 아래에 넣어 주세요.</p>
+        <div class="drop" data-slot="hipass" id="hipass-drop">
+          <div class="drop-head">1. 왕복 하이패스 영수증<button type="button" class="pick">사진 추가</button></div>
+          <div class="paste" contenteditable="true" inputmode="none" role="button" aria-label="여기에 캡처 붙여넣기">여기를 누르고 붙여넣기 <b>(PC: Ctrl+V · 폰: 길게 눌러 붙여넣기)</b></div>
+          <div class="thumbs"></div>
+        </div>
+        <div class="drop" data-slot="map">
+          <div class="drop-head"><span id="map-label">2. 편도 이동 거리 (지도 캡처)</span><button type="button" class="pick">사진 추가</button></div>
+          <div class="paste" contenteditable="true" inputmode="none" role="button" aria-label="여기에 캡처 붙여넣기">여기를 누르고 붙여넣기 <b>(PC: Ctrl+V · 폰: 길게 눌러 붙여넣기)</b></div>
+          <div class="thumbs"></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="fs-pub" hidden>
+        <legend>교통비 증빙 · 대중교통</legend>
+        <div class="drop" data-slot="ticket">
+          <div class="drop-head">왕복 티켓 영수증<button type="button" class="pick">사진 추가</button></div>
+          <div class="paste" contenteditable="true" inputmode="none" role="button" aria-label="여기에 캡처 붙여넣기">여기를 누르고 붙여넣기 <b>(PC: Ctrl+V · 폰: 길게 눌러 붙여넣기)</b></div>
+          <div class="thumbs"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>숙박비 증빙</legend>
+        <label class="check"><input type="checkbox" id="lodge">전일 연수장 도착 (숙박 있음)</label>
+        <div class="drop" data-slot="lodging" id="lodge-drop" hidden>
+          <div class="drop-head">숙박지 인보이스 및 결제 영수증<button type="button" class="pick">사진 추가</button></div>
+          <div class="paste" contenteditable="true" inputmode="none" role="button" aria-label="여기에 캡처 붙여넣기">여기를 누르고 붙여넣기 <b>(PC: Ctrl+V · 폰: 길게 눌러 붙여넣기)</b></div>
+          <div class="thumbs"></div>
+        </div>
+        <p class="hint" id="lodge-hint">체크하면 숙박비 증빙 페이지가 PDF에 추가됩니다.</p>
+      </fieldset>
+      <fieldset>
+        <legend>추가 서류</legend>
+        <div class="xdrop" id="xdrop">
+          <strong>PDF나 사진 파일을 여기로 끌어다 놓으세요</strong>
+          <span>출장신청서 뒤에 넣은 순서대로 붙습니다</span>
+          <button type="button" class="pick" id="xpick">파일 선택</button>
+        </div>
+        <ul class="xlist" id="xlist"></ul>
+      </fieldset>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+      <input type="file" id="xfile" accept="application/pdf,.pdf,image/*" multiple hidden>
+    </form>
+
+    <section class="preview" aria-label="미리보기">
+      <h2><span>미리보기</span><span id="pcount"></span></h2>
+      <div id="pages"></div>
+    </section>
+  </div>
+</div>
+
+<div class="bar"><div class="bar-in">
+  <div id="status" role="status">캡처한 화면은 각 칸의 붙여넣기 영역에 바로 붙여넣을 수 있습니다.</div>
+  <button type="button" id="save">PDF 저장</button>
+</div></div>
+<div id="stage" aria-hidden="true"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const TEXT_IDS=['name','org','rank','purpose','sd','ed','st','et','from','to','trd','meal','proj','note','ad','pi'];
+  const imgs={hipass:[],map:[],ticket:[],lodging:[]};
+  const KEY='trip-form-v1';
+  const h=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // today as default apply date
+  const t=new Date(); const iso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  $('ad').value=iso;
+
+  // restore draft
+  try{const d=JSON.parse(localStorage.getItem(KEY)||'null'); if(d){TEXT_IDS.forEach(k=>{if(d[k]!=null)$(k).value=d[k]}); if(d.tr==='대중교통')$('tr-pub').checked=true; if(d.zone==='관내')$('zone-in').checked=true; $('lodge').checked=!!d.lodge;}}catch(e){}
+  function saveDraft(){try{const d={};TEXT_IDS.forEach(k=>d[k]=$(k).value);d.tr=tr();d.zone=zone();d.lodge=$('lodge').checked;localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+
+  const zone=()=>$('zone-in').checked?'관내':'관외';
+  const tr=()=>$('tr-pub').checked?'대중교통':'자차';
+  const v=id=>$(id).value.trim();
+  const dot=d=>{if(!d)return '2026. 00. 00.';const [y,m,dd]=d.split('-');return `${y}. ${m}. ${dd}.`};
+  const korDate=d=>{if(!d)return '2026년 　　월 　　일';const [y,m,dd]=d.split('-');return `${y}년 ${+m}월 ${+dd}일`};
+
+  function grid(list){
+    const n=list.length, cols=n<=1?1:2;
+    return `<div class="imgs" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${list.map(s=>`<div class="cell"><img src="${s}" alt=""></div>`).join('')}</div>`;
+  }
+
+  function page1(){
+    const trTxt=tr()+(v('trd')?` (${h(v('trd'))})`:'');
+    return `<div class="paper">
+      <h3>출 장 신 청 서 (국내-${zone()})</h3>
+      <p class="lead">다음과 같이 출장 신청(승인) 내역을 첨부합니다.</p>
+      <p class="dot">● 신청내역</p>
+      <table>
+        <tr><th rowspan="2">출 장 자</th><th class="sub">성 명</th><th class="sub">소 속</th><th class="sub" style="letter-spacing:.15em">직 급(직 위)</th></tr>
+        <tr><td class="c">${h(v('name'))}</td><td class="c">${h(v('org'))}</td><td class="c">${h(v('rank'))}</td></tr>
+      </table>
+      <table>
+        <tr><th>출 장 내 용</th><td colspan="2">${h(v('purpose'))}</td></tr>
+        <tr><th>출 장 일 시</th><td colspan="2">${dot(v('sd'))} ~ ${dot(v('ed'))} (${h(v('st')||'00:00')} ~ ${h(v('et')||'00:00')})</td></tr>
+        <tr><th rowspan="2">출 장 지</th><td class="c sub-h">출발지(소속기관)</td><td class="c sub-h">목적지(연수장소)</td></tr>
+        <tr><td class="c">${h(v('from'))}</td><td class="c">${h(v('to'))}</td></tr>
+        <tr><th>이 동 수 단</th><td colspan="2">${trTxt}</td></tr>
+        <tr><th>식 사 여 부</th><td colspan="2">${h(v('meal'))}</td></tr>
+        <tr><th>사 업 명</th><td colspan="2">${h(v('proj'))}</td></tr>
+        <tr><th style="letter-spacing:2.6em;padding-left:calc(10px + 2.6em)">비고</th><td colspan="2">${h(v('note'))}</td></tr>
+      </table>
+      <p class="req">상기와 같이 신청하오니 처리하여 주시기 바랍니다.</p>
+      <p class="date">${korDate(v('ad'))}</p>
+      <div class="sign"><span class="lbl">연구책임자:</span><span class="nm">${h(v('pi'))}</span><span>(인)</span></div>
+      <div class="to">충남대학교 산학협력단장 귀하</div>
+    </div>`;
+  }
+
+  function page2(){
+    let body;
+    if(tr()==='대중교통'){
+      body=imgs.ticket.length?grid(imgs.ticket):`<div class="ph"><p>[대중교통 이용 시] 왕복 티켓 영수증</p></div>`;
+    }else if(zone()==='관내'){
+      body=imgs.map.length?`<div class="part"><div class="part-l">편도 이동 거리${v('from')||v('to')?` (${h(v('from'))} → ${h(v('to'))})`:''}</div>${grid(imgs.map)}</div>`:`<div class="ph"><p>[자차 이용 시]</p><p>편도 이동 거리(네이버 지도 캡처본)</p></div>`;
+    }else if(!imgs.hipass.length && !imgs.map.length){
+      body=`<div class="ph"><p>[자차 이용 시]</p><p>1. 왕복 하이패스 영수증</p><p>2. 편도 이동 거리(네이버 지도 캡처본)</p></div>`;
+    }else{
+      const part=(lbl,list,empty)=>`<div class="part"><div class="part-l">${lbl}</div>${list.length?grid(list):`<div class="empty-part">${empty}</div>`}</div>`;
+      body=part('1. 왕복 하이패스 영수증',imgs.hipass,'하이패스 영수증 첨부 필요')+part('2. 편도 이동 거리'+(v('from')||v('to')?` (${h(v('from'))} → ${h(v('to'))})`:''),imgs.map,'지도 캡처 첨부 필요');
+    }
+    return `<div class="paper"><div class="box"><div class="box-h">교통비 증빙</div><div class="box-b">${body}</div></div></div>`;
+  }
+
+  function page3(){
+    const body=imgs.lodging.length?grid(imgs.lodging):`<div class="ph"><p>[전일 연수장 도착 시] 숙박지에 대한 인보이스 및 결제 영수증</p></div>`;
+    return `<div class="paper"><div class="box"><div class="box-h">숙박비 증빙</div><div class="box-b">${body}</div></div></div>`;
+  }
+
+  const pagesHtml=()=>[page1(),page2()].concat($('lodge').checked?[page3()]:[]);
+
+  function fit(root){
+    root.querySelectorAll('.cell').forEach(c=>{const i=c.querySelector('img');i.style.maxWidth=c.clientWidth+'px';i.style.maxHeight=c.clientHeight+'px'});
+  }
+  function scale(){
+    const w=$('pages').clientWidth||794, s=Math.min(1,w/794);
+    $('pages').querySelectorAll('.frame').forEach(f=>{f.style.width=794*s+'px';f.style.height=1123*s+'px';f.firstElementChild.style.transform=`scale(${s})`});
+  }
+  // 24-hour time pickers
+  const pad=n=>String(n).padStart(2,'0');
+  ['st','et'].forEach(id=>{
+    $(id+'-h').innerHTML=Array.from({length:24},(_,i)=>`<option value="${pad(i)}">${pad(i)}시</option>`).join('');
+    $(id+'-m').innerHTML=Array.from({length:12},(_,i)=>`<option value="${pad(i*5)}">${pad(i*5)}분</option>`).join('');
+  });
+  function setTimeSel(id){
+    const [hh,mm]=($(id).value||'00:00').split(':');
+    $(id+'-h').value=pad(Math.min(23,+hh||0));
+    const m=pad(Math.round((+mm||0)/5)*5%60);
+    $(id+'-m').value=m;
+  }
+  function syncTimes(){['st','et'].forEach(id=>{$(id).value=$(id+'-h').value+':'+$(id+'-m').value})}
+  setTimeSel('st');setTimeSel('et');
+
+  function render(){
+    syncTimes();
+    const ps=pagesHtml();
+    const xPages=extras.reduce((n,x)=>n+x.pages,0);
+    $('pages').innerHTML=ps.map(p=>`<div class="frame">${p}</div>`).join('')+(extras.length?`<div class="xcard"><b>추가 서류 ${extras.length}건 · ${xPages}쪽</b>이 뒤에 붙습니다.<ol>${extras.map(x=>`<li>${h(x.name)} (${x.pages}쪽)</li>`).join('')}</ol></div>`:'');
+    $('pcount').textContent=`${ps.length+xPages}쪽`;
+    renderExtras();
+    scale(); fit($('pages'));
+    // UI state
+    const car=tr()==='자차';
+    $('fs-car').hidden=!car; $('fs-pub').hidden=car;
+    const inZone=zone()==='관내';
+    $('hipass-drop').hidden=inZone; $('lk-hipass').hidden=inZone;
+    $('hipass-drop').querySelector('.drop-head').firstChild.textContent=inZone?'':'1. 왕복 하이패스 영수증';
+    $('map-label').textContent=inZone?'편도 이동 거리 (지도 캡처)':'2. 편도 이동 거리 (지도 캡처)';
+    $('zone-hint').textContent=inZone?'관내 출장: 자차 이용 시 하이패스 영수증 없이 지도 캡처만 넣으면 됩니다.':'관외 출장: 자차 이용 시 하이패스 영수증과 지도 캡처가 필요합니다.';
+    $('lodge-drop').hidden=!$('lodge').checked; $('lodge-hint').hidden=$('lodge').checked;
+    $('lk-kakao').href=`https://map.kakao.com/?sName=${encodeURIComponent(v('from'))}&eName=${encodeURIComponent(v('to'))}`;
+    document.querySelectorAll('.drop').forEach(d=>{
+      const slot=d.dataset.slot;
+      d.querySelector('.thumbs').innerHTML=imgs[slot].map((s,i)=>`<div class="thumb"><img src="${s}" alt="첨부 ${i+1}"><button type="button" data-rm="${slot}:${i}" aria-label="삭제">×</button></div>`).join('');
+    });
+  }
+
+  let timer;
+  $('f').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{render();saveDraft()},120)});
+  $('f').addEventListener('change',()=>{render();saveDraft()});
+  $('f').addEventListener('submit',e=>e.preventDefault());
+  addEventListener('resize',scale);
+
+  // image picking
+  let curSlot=null;
+  $('f').addEventListener('click',e=>{
+    const pick=e.target.closest('.pick');
+    if(pick){curSlot=pick.closest('.drop').dataset.slot;$('file').value='';$('file').click();return}
+    const rm=e.target.closest('[data-rm]');
+    if(rm){const [s,i]=rm.dataset.rm.split(':');imgs[s].splice(+i,1);render()}
+  });
+  function shrink(file){
+    return new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>{const im=new Image();im.onload=()=>{
+        const M=1800,k=Math.min(1,M/Math.max(im.width,im.height));
+        const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+        const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+        res(c.toDataURL('image/jpeg',0.88));
+      };im.onerror=()=>rej(new Error('img'));im.src=r.result};
+      r.onerror=()=>rej(r.error);r.readAsDataURL(file);
+    });
+  }
+  $('file').addEventListener('change',async()=>{
+    const files=[...$('file').files]; if(!files.length||!curSlot)return;
+    status('사진을 불러오는 중…');
+    let bad=0;
+    for(const f of files){try{imgs[curSlot].push(await shrink(f))}catch(e){bad++}}
+    render();
+    status(bad?`${bad}개 파일을 읽지 못했습니다. JPG·PNG 사진인지 확인해 주세요.`:'사진을 추가했습니다.',bad?'err':'ok');
+  });
+
+  // ---- paste from clipboard ----
+  let lastSlot=null;
+  const defSlot=()=>tr()==='대중교통'?'ticket':'map';
+  function markActive(slot){lastSlot=slot;document.querySelectorAll('.drop').forEach(d=>d.classList.toggle('active',d.dataset.slot===slot))}
+  $('f').addEventListener('focusin',e=>{const d=e.target.closest('.drop');if(d)markActive(d.dataset.slot)});
+  $('f').addEventListener('pointerdown',e=>{const d=e.target.closest('.drop');if(d)markActive(d.dataset.slot)});
+  // keep paste boxes free of typed text
+  document.querySelectorAll('.paste').forEach(b=>{
+    const orig=b.innerHTML;
+    b.addEventListener('beforeinput',e=>{if(e.inputType!=='insertFromPaste')e.preventDefault()});
+    b.addEventListener('input',()=>{b.innerHTML=orig});
+    b.addEventListener('drop',e=>e.preventDefault());
+  });
+  async function addFiles(slot,files){
+    if(!files.length){status('클립보드에 사진이 없습니다. 화면을 캡처(복사)한 뒤 다시 붙여넣어 주세요.','err');return}
+    status('사진을 붙여넣는 중…');
+    let bad=0;
+    for(const f of files){try{imgs[slot].push(await shrink(f))}catch(e){bad++}}
+    render(); markActive(slot);
+    const names={hipass:'하이패스 영수증',map:'지도 캡처',ticket:'티켓 영수증',lodging:'숙박 영수증'};
+    status(bad?`${bad}개 사진을 읽지 못했습니다.`:`${names[slot]} 칸에 붙여넣었습니다.`,bad?'err':'ok');
+  }
+  document.addEventListener('paste',e=>{
+    const tgt=e.target;
+    const box=tgt.closest&&tgt.closest('.paste');
+    const inText=!box&&tgt.matches&&tgt.matches('input,textarea');
+    const cd=e.clipboardData; if(!cd)return;
+    const files=[...(cd.files||[])].filter(f=>f.type.startsWith('image/'));
+    if(!files.length)[...(cd.items||[])].forEach(it=>{if(it.kind==='file'&&it.type.startsWith('image/')){const f=it.getAsFile();if(f)files.push(f)}});
+    if(inText&&!files.length)return; // normal text paste into a field
+    e.preventDefault();
+    let slot=box?box.closest('.drop').dataset.slot:lastSlot;
+    const ok=s=>{const d=document.querySelector(`.drop[data-slot="${s}"]`);return d&&!d.hidden&&!d.closest('[hidden]')};
+    if(!slot||!ok(slot))slot=defSlot();
+    addFiles(slot,files);
+  });
+
+  // ---- extra documents (PDF / images appended at the end) ----
+  const extras=[]; // {name, kind:'pdf'|'img', buf?, data?, pages}
+  const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+  const isImg=f=>f.type.startsWith('image/');
+  function renderExtras(){
+    $('xlist').innerHTML=extras.map((x,i)=>`<li><span class="tag">${x.kind==='pdf'?'PDF':'사진'}</span><span class="nm" title="${h(x.name)}">${h(x.name)}<small>${x.pages}쪽</small></span><span class="ctl"><button type="button" data-xup="${i}" aria-label="위로" ${i?'':'disabled'}>↑</button><button type="button" data-xdn="${i}" aria-label="아래로" ${i<extras.length-1?'':'disabled'}>↓</button><button type="button" data-xrm="${i}" aria-label="삭제">×</button></span></li>`).join('');
+  }
+  async function addExtras(files){
+    files=[...files].filter(f=>isPdf(f)||isImg(f));
+    if(!files.length){status('PDF 또는 사진 파일만 넣을 수 있습니다.','err');return}
+    if(!window.PDFLib){status('PDF 도구를 불러오지 못했습니다. 새로고침해 주세요.','err');return}
+    status('서류를 불러오는 중…');
+    let bad=[];
+    for(const f of files){
+      try{
+        if(isPdf(f)){
+          const buf=await f.arrayBuffer();
+          const doc=await PDFLib.PDFDocument.load(buf,{ignoreEncryption:true});
+          extras.push({name:f.name,kind:'pdf',buf,pages:doc.getPageCount()});
+        }else{
+          extras.push({name:f.name||'붙여넣은 사진',kind:'img',data:await shrink(f),pages:1});
+        }
+      }catch(e){bad.push(f.name)}
+    }
+    render();
+    status(bad.length?`읽지 못한 파일: ${bad.join(', ')} (암호가 걸린 PDF는 넣을 수 없습니다)`:`추가 서류 ${files.length}건을 넣었습니다.`,bad.length?'err':'ok');
+  }
+  $('xpick').addEventListener('click',()=>{$('xfile').value='';$('xfile').click()});
+  $('xfile').addEventListener('change',()=>addExtras($('xfile').files));
+  $('xlist').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    const {xup,xdn,xrm}=b.dataset;
+    if(xrm!=null)extras.splice(+xrm,1);
+    else if(xup!=null){const i=+xup;[extras[i-1],extras[i]]=[extras[i],extras[i-1]]}
+    else if(xdn!=null){const i=+xdn;[extras[i+1],extras[i]]=[extras[i],extras[i+1]]}
+    render();
+  });
+
+  // drag & drop: extra zone takes PDF/images; image slots take images; anything else dropped on the page goes to extras
+  const hasFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files');
+  document.addEventListener('dragover',e=>{
+    if(!hasFiles(e))return; e.preventDefault();
+    const z=e.target.closest&&(e.target.closest('.drop')||e.target.closest('.xdrop'));
+    document.querySelectorAll('.drop,.xdrop').forEach(d=>d.classList.toggle('over',d===z));
+    if(!z)$('xdrop').classList.add('over');
+  });
+  document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.querySelectorAll('.over').forEach(d=>d.classList.remove('over'))});
+  document.addEventListener('drop',e=>{
+    if(!hasFiles(e))return; e.preventDefault();
+    document.querySelectorAll('.over').forEach(d=>d.classList.remove('over'));
+    const files=[...e.dataTransfer.files]; if(!files.length)return;
+    const slotEl=e.target.closest&&e.target.closest('.drop');
+    if(slotEl&&files.every(isImg)){addFiles(slotEl.dataset.slot,files);return}
+    addExtras(files);
+  });
+
+  function status(msg,cls){const s=$('status');s.textContent=msg;s.className=cls||''}
+
+  // downloads capability (claude.ai viewer); falls back to a normal browser download
+  let dlPromise=null;
+  if(window.claude&&typeof window.claude.use==='function'){dlPromise=window.claude.use('downloads').catch(()=>null)}
+
+  function evidenceCount(){
+    let n=0;
+    if(tr()==='자차'){if(zone()==='관외')n+=imgs.hipass.length;n+=imgs.map.length}
+    else n+=imgs.ticket.length;
+    if($('lodge').checked)n+=imgs.lodging.length;
+    return n;
+  }
+  function tripPayload(){
+    const sd=v('sd'),ed=v('ed');
+    const period=sd||ed?`${sd?dot(sd):''} ~ ${ed?dot(ed):''}`:'';
+    const payload={
+      "출장자":v('name'),
+      "소속":v('org'),
+      "직급":v('rank'),
+      "출장목적":v('purpose'),
+      "출장기간":period,
+      "출장시간":`${v('st')}~${v('et')}`,
+      "출발지":v('from'),
+      "목적지":v('to'),
+      "교통편":tr()+(v('trd')?` (${v('trd')})`:''),
+      "식사여부":v('meal'),
+      "사업명":v('proj'),
+      "비고":v('note'),
+      "구분":zone(),
+      "증빙":evidenceCount()
+    };
+    const bytes=new TextEncoder().encode(JSON.stringify(payload));
+    let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function missing(){
+    const m=[];
+    if(!v('name'))m.push('성명');
+    if(!v('to'))m.push('목적지');
+    if(!v('sd'))m.push('시작일');
+    if(tr()==='자차'){if(zone()==='관외'&&!imgs.hipass.length)m.push('하이패스 영수증');if(!imgs.map.length)m.push('지도 캡처')}
+    else if(!imgs.ticket.length)m.push('티켓 영수증');
+    if($('lodge').checked&&!imgs.lodging.length)m.push('숙박 영수증');
+    return m;
+  }
+
+  $('save').addEventListener('click',async()=>{
+    if(!window.jspdf||!window.html2canvas){status('PDF 도구를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.','err');return}
+    const btn=$('save');btn.disabled=true;
+    const miss=missing();
+    try{
+      status('PDF 만드는 중…');
+      try{await document.fonts.ready}catch(e){}
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+      const stage=$('stage'); const ps=pagesHtml();
+      for(let i=0;i<ps.length;i++){
+        stage.innerHTML=ps[i]; fit(stage);
+        await Promise.all([...stage.querySelectorAll('img')].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
+        fit(stage);
+        const cv=await html2canvas(stage.firstElementChild,{scale:2,backgroundColor:'#ffffff',logging:false,width:794,height:1123,windowWidth:1200,scrollX:0,scrollY:0,onclone:d=>{const s=d.getElementById('stage');s.style.left='0';s.style.top='0'}});
+        if(i)pdf.addPage();
+        pdf.addImage(cv.toDataURL('image/jpeg',0.9),'JPEG',0,0,210,297);
+      }
+      stage.innerHTML='';
+      if(!window.PDFLib)throw new Error('pdflib');
+      const out=await PDFLib.PDFDocument.load(pdf.output('arraybuffer'));
+      if(extras.length){
+        status('추가 서류를 합치는 중…');
+        for(const x of extras){
+          if(x.kind==='pdf'){
+            const src=await PDFLib.PDFDocument.load(x.buf,{ignoreEncryption:true});
+            const pgs=await out.copyPages(src,src.getPageIndices());
+            pgs.forEach(p=>out.addPage(p));
+          }else{
+            const img=await out.embedJpg(x.data);
+            const W=595.28,H=841.89,M=28;
+            const k=Math.min((W-2*M)/img.width,(H-2*M)/img.height,1.5);
+            const w=img.width*k,hh=img.height*k;
+            out.addPage([W,H]).drawImage(img,{x:(W-w)/2,y:(H-hh)/2,width:w,height:hh});
+          }
+        }
+      }
+      // 입력값을 PDF 속성(Subject)에 글자로 심기 — 구글 시트(Apps Script)가 읽는 용도
+      out.setSubject('TRIP1:'+tripPayload());
+      const blob=new Blob([await out.save({useObjectStreams:false})],{type:'application/pdf'});
+      const fname=`출장신청서_${v('name')||'이름'}_${(v('sd')||iso).replace(/-/g,'')}.pdf`;
+      const dl=dlPromise?await dlPromise:null;
+      if(dl){
+        await dl.save({filename:fname,data:blob});
+        status(miss.length?`저장했습니다. 비어 있는 항목: ${miss.join(', ')}`:'PDF를 저장했습니다.',miss.length?'err':'ok');
+      }else{
+        const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),60000);
+        status(miss.length?`PDF를 내려받았습니다. 비어 있는 항목: ${miss.join(', ')}`:'PDF를 내려받았습니다.',miss.length?'err':'ok');
+      }
+    }catch(e){
+      const c=e&&e.code;
+      if(c==='declined')status('저장을 취소했습니다.');
+      else if(c==='rate_limited')status('이미 저장 창이 열려 있습니다. 잠시 후 다시 눌러 주세요.','err');
+      else status('PDF를 만들지 못했습니다. 사진 수를 줄여 다시 시도해 주세요.','err');
+    }finally{btn.disabled=false}
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
